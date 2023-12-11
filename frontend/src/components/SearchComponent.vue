@@ -18,14 +18,18 @@
                 label="Enter your search query"
                 outlined
                 dense
+                variant="outlined"
                 @keydown.enter="search"
               ></v-text-field>
           </v-card-text>
           <v-card-actions>
-            <v-btn @click="search()" color="primary">Search</v-btn>
-            <v-btn  prepend-icon="" @click="toggleView()" color="primary">Toggle View</v-btn>
+            <v-btn @click="search()" color="primary"><v-icon>mdi-search-web</v-icon>Search</v-btn>
+            <v-btn @click="toggleView()" color="primary"><v-icon>mdi-view-grid</v-icon> Toggle View</v-btn>
             <v-divider class="border-opacity-0"></v-divider>
-            <v-menu offset-y>
+            <v-btn icon @click="redirectToMenusPage" color="primary">
+                <v-icon>mdi-menu</v-icon>
+            </v-btn>
+            <!-- <v-menu offset-y>
             <template v-slot:activator="{ on }">
                 <v-btn v-on="on" icon>
                   <v-icon>mdi-calendar-month</v-icon>
@@ -33,7 +37,7 @@
               </template>
 
               <v-date-picker v-model="selectedDate" @input="filterByDate"></v-date-picker>
-          </v-menu>
+          </v-menu> -->
 
           </v-card-actions>
         </v-card>
@@ -53,17 +57,18 @@
                   </v-card>
 
                   <v-card v-else-if="results" class="results-card" elevation="10">
-                    <v-img :src="result.image" alt="Article Image" class="result-image" @load="handleImageLoad"></v-img>
+                    <div v-if="result.img !== undefined" class="result-image-container">
+                      <v-img :src='result.img' alt="Article Image" class="result-image"></v-img>
+                    </div>
                     <v-card-title>{{ result.title }}</v-card-title>
                     <v-card-subtitle>{{ truncateText(result.text, 250) }}</v-card-subtitle>
                     <v-card-text class="result-info">
-                      <p class="result-author-date">{{ formatAuthorName(result.author)}} | {{ result.year }}, {{ result.month }}</p>
+                      <p class="result-author-date">{{ formatAuthorName(result.author)}} | {{ result.year }} | {{ getMonthText(result.month) }}</p>
                     </v-card-text>
                     <v-card-actions>
-                      <v-btn text :href="result.url" class="result-link">Read more</v-btn>
+                      <v-btn text @click="openArticle(result.url)" class="result-link">Read more</v-btn>
                     </v-card-actions>
                   </v-card>
-                  <v-divider v-if="index < results.length - 1"></v-divider>
               </v-col>
             </v-row>
           </template>
@@ -72,13 +77,17 @@
             <v-list>
               <v-list-item v-for="result in results" :key="result.docid">
                 <v-list-item-content>
-                  <v-img :src="result.image" alt="Article Image" class="result-image"></v-img>
+                  <div class="result-image-container">
+                      <v-img :src='result.img' alt="Article Image" class="result-image"></v-img>
+                    </div>
                   <v-list-item-title>
-                    <v-text text :href="result.url" class="result-link">{{ result.title }}</v-text>
+                    <v-text text @click="openArticle(result.url)" class="result-link">{{ result.title }}</v-text>
                   </v-list-item-title>
                   <v-list-item-subtitle>{{ truncateText(result.text, 250) }}</v-list-item-subtitle>
                   <v-list-item-content class="result-info">
-                    <p class="result-author-date">{{ formatAuthorName(result.author) }} | {{ result.year }}, {{ result.month }}</p>
+                    <!-- <template v-if="this.results.author !== undefined && this.results.month !== undefined && this.results.text !== undefined"> -->
+                      <p class="result-author-date">{{ formatAuthorName(result.author) }} | {{ result.year }} | {{ getMonthText(result.month) }}</p>
+                  <!-- </template> -->
                   </v-list-item-content>
                 </v-list-item-content>
                 <v-divider :thickness="30" class="border-opacity-0"></v-divider>
@@ -87,7 +96,7 @@
           </template>
         </v-card>
 
-        <v-card v-else class="results-card" elevation="10">
+        <v-card v-else-if="results == []" class="results-card" elevation="10">
           <v-card-title class="results-title">No results found</v-card-title>
         </v-card>
       </v-col>
@@ -113,6 +122,10 @@ export default {
     };
   },
   methods: {
+    redirectToMenusPage() {
+        // You can replace '/menus' with the actual route/path to your menus page
+        this.$router.push('/menus');
+    },
     async search() {
       try {
         const startTime = Date.now(); // Record start time before making the request
@@ -130,10 +143,13 @@ export default {
         }
 
         const dataArray = jsonStringArray.map(JSON.parse);
+        console.log(dataArray[0])
         this.results = dataArray;
+
         const endTime = Date.now(); // Record end time after receiving the response
         this.queryTime = endTime - startTime; // Calculate the time taken for the query
         this.searched = true;
+
       } catch (error) {
         console.error(error);
       } finally {
@@ -144,6 +160,10 @@ export default {
       this.isGridView = !this.isGridView;
     },
     truncateText(text, maxLength) {
+      if(text === undefined) {
+        this.results.text = null
+        return
+      }
       if (text.length <= maxLength) {
         return text + '...';
       } else {
@@ -151,22 +171,34 @@ export default {
       }
     },
     formatAuthorName(author) {
-      if(author === null) {
-        return "Author"
+      if(author === null || author === undefined) {
+        return this.results.author = "Author"
+         
       }
       // Split the author name into words
       const words = author.toLowerCase().split(' ');
-
       // Capitalize the first letter of each word
       const capitalizedWords = words.map(word => word.charAt(0).toUpperCase() + word.slice(1));
-
       // Join the capitalized words back into a string
       return capitalizedWords.join(' ');
     },
     filterByDate() {
       this.search();
-
     },
+    openArticle(url) {
+      window.open(url, '_blank');
+  },
+  getMonthText(month) {
+    if(month === null || month === undefined) {
+        this.results.month = null
+        return 
+      }
+      const months = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+      return months[month - 1] || ''; // Subtract 1 as array is zero-based
+    }
   },
 };
 </script>
@@ -187,9 +219,20 @@ export default {
   height: 100vh
 }
 
+.result-image-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 3px solid rgba(169, 169, 169, 0.5); /* 3px semi-opaque grey box */
+  border-radius: 5px; /* Optional: Add border-radius for rounded corners */
+  overflow: hidden; /* Optional: Hide any overflowing content within the container */
+}
+
 .result-image {
-  max-width: 10%; /* Ensure images don't exceed the container width */
-  max-height: 200px; /* Set a maximum height for the images */
+  padding-inline: 10px;
+  display: stretch;
+  max-width: 25%; /* Ensure the image doesn't exceed the container width */
+  max-height: 50%; /* Ensure the image doesn't exceed the container height */
   object-fit: cover; /* Maintain aspect ratio while covering the container */
 }
 
@@ -235,6 +278,7 @@ export default {
   /* Vuetify primary color */
   font-size: 1.2em;
   font-weight: bold;
+  cursor: pointer;
 }
 
 .result-link:hover {

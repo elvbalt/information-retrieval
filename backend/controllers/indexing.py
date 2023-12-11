@@ -92,7 +92,6 @@ def retrieve_info(cdf, db_objects):
         return "[]"  # Return an empty array as a string
     elif len(cdf_filtered) == 1:
         # Return a single JSON object as a string
-        print("whateverrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr")
         js = cdf_filtered.to_json()
         print(js)
 
@@ -106,6 +105,7 @@ def getQueryResult(index, query, db_objs):
         columns=["qid", "query"],
     )
     results = bm25.transform(queries)
+    print(results)
 
     formattedResult = retrieve_info(results, db_objs)
     return formattedResult

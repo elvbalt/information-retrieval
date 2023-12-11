@@ -1,6 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 import SearchComponent from "@/components/SearchComponent.vue"
+import MenusPage from "@/components/MenusPage.vue"
+import TopicPage from '@/components/TopicPage.vue'; 
+
 
 const routes = [
     {
@@ -8,6 +11,17 @@ const routes = [
         name: 'Search',
         component: SearchComponent
       },
+      {
+        path: '/menus', 
+        name: 'Menus',
+        component: MenusPage
+    },
+    {
+      path: '/topic/:topic',
+      name: 'TopicPage',
+      component: TopicPage
+    }
+
 ]
 
 

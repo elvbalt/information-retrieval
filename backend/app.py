@@ -9,6 +9,7 @@ import pandas as pd
 import json
 
 from controllers.indexing import indexing, getQueryResult
+from controllers.clustering import get_topic_names, document_by_topic
 
 
 # In order to re-do all the steps before launching backend:
@@ -56,26 +57,25 @@ app.config.from_object(__name__)
 
 CORS(app, resources={r'/*': {'origins': '*'}})
 
-# @app.route('/ping/<parameter>', methods=['GET'])
-# def example_route(parameter):
-#     return jsonify({'parameter': parameter}, {"just": "ok"})
-
-
 @app.route('/search/<query>', methods=['GET'])
 def send_q(query):
+    if not (query):
+        return "[]"
     query = [["q1", query]]
     return getQueryResult(index, query, db_objs)
 
+
+@app.route('/menus', methods=['GET'])
+def get_topics():
+    tn = get_topic_names()
+    return tn
+
+
+@app.route('/topic/<query>', methods=["GET"])
+def get_articles(query):
+    df = document_by_topic(str(query), '../backend/db/output.json')
+    return df.to_json(orient='records', lines=True)
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
-
-
-# ------------------------------------------------------------------------------------------
-
-
-# @app.route('/api/search', methods=['GET'])
-# def search():
-#     # Perform MongoDB query here and return results
-#     results = collection.find({"your_query_here"})
-#     return jsonify({"data": results})
-
